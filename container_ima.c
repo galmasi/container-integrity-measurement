@@ -223,12 +223,13 @@ int ima_measure_image_fs(struct dentry *root, char *root_hash)
 			res = dentry_path_raw(root, pathbuf, PATH_MAX);
                         file = filp_open(res, O_RDONLY, 0);
                         if (IS_ERR(file) || !file) {
-				pr_info("container-ima: open [%s] failed %d", res, PTR_ERR(file));
-				return -1;
+			  //				pr_info("container-ima: open [%s] failed %d", res, PTR_ERR(file));
+			  kfree(pathbuf);
+			  return -1;
 			} else {
-                                root_hash = kprobe_measure_file(file, root_hash);
-				kfree(pathbuf);
-				filp_close(file, 0);
+			  root_hash = kprobe_measure_file(file, root_hash);
+			  kfree(pathbuf);
+			  filp_close(file, 0);
                         }
         } else {
 		// Catch errors 
