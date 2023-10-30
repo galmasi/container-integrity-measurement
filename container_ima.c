@@ -217,15 +217,16 @@ int ima_measure_image_fs(struct dentry *root, char *root_hash)
 			char *res;
 			
 			pathbuf = kmalloc(PATH_MAX, GFP_KERNEL);
-			if (!pathbuf)
+			if (!pathbuf) {
 				return -1;
+			}
 
 			res = dentry_path_raw(root, pathbuf, PATH_MAX);
                         file = filp_open(res, O_RDONLY, 0);
                         if (IS_ERR(file) || !file) {
-			  //				pr_info("container-ima: open [%s] failed %d", res, PTR_ERR(file));
-			  kfree(pathbuf);
-			  return -1;
+			  //pr_info("container-ima: open [%s] failed %d", res, PTR_ERR(file));
+				kfree(pathbuf);
+				return -1;
 			} else {
 			  root_hash = kprobe_measure_file(file, root_hash);
 			  kfree(pathbuf);
@@ -237,6 +238,7 @@ int ima_measure_image_fs(struct dentry *root, char *root_hash)
 	}
 
 	return 0;
+
 }
 /*
  * handler_post
@@ -259,7 +261,12 @@ void __kprobes handler_post(struct kprobe *p, struct pt_regs *ctx, unsigned long
         char ns_buf[128]; 
 	long tmp;
 
+
+	
 	ns = current->nsproxy->uts_ns->ns.inum;
+
+	if (ns == init_task.nsproxy->uts_ns->ns.inum)
+	  return;
 
         aggregate = kmalloc(sizeof(aggregate)* 64, GFP_KERNEL);
 	if (!aggregate) 
