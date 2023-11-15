@@ -132,7 +132,7 @@ noinline int ima_store_kprobe(struct dentry *root, unsigned int ns, int hash_alg
         memcpy(hash->hdr.digest, hash->digest, sizeof(hash->digest));
         memcpy(iint.ima_hash, hash, length);
 
-	snprintf(name, 63, "%u-%s", ns, dentry ? dentry->name : "<nopath>");
+	snprintf(name, 63, "%u-%s", ns, dentry ? dentry->d_name : "<nopath>");
 
         /* IMA event data */
         struct ima_event_data event_data = { .iint = &iint,
