@@ -108,7 +108,7 @@ noinline char *kprobe_measure_file(struct file *file, char *aggregate)
  * 	Extend to pcr 11
  */
 noinline int ima_store_kprobe(struct dentry *root, unsigned int ns, int hash_algo,
-			      struct ima_max_digest_data *hash, int length, const struct dentry * dentry)
+			      struct ima_max_digest_data *hash, int length, const char * path)
 {
 
         int i, check;
@@ -132,7 +132,7 @@ noinline int ima_store_kprobe(struct dentry *root, unsigned int ns, int hash_alg
         memcpy(hash->hdr.digest, hash->digest, sizeof(hash->digest));
         memcpy(iint.ima_hash, hash, length);
 
-	snprintf(name, 63, "%u-%s", ns, dentry ? dentry->d_name : "<nopath>");
+	snprintf(name, 63, "%u-%s", ns, path ? path : "<nopath>");
 
         /* IMA event data */
         struct ima_event_data event_data = { .iint = &iint,
@@ -301,7 +301,7 @@ noinline int bpf_image_measure(void *mem, int mem__sz)
         if (check < 0)
 		goto cleanup;
 
-        ima_store_kprobe(root, ns, 4, &hash, length, dentry);
+        ima_store_kprobe(root, ns, 4, &hash, length, res);
 
 cleanup:
         kfree(aggregate);
