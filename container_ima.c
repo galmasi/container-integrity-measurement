@@ -235,14 +235,16 @@ noinline int ima_measure_image_fs(struct dentry *root, char *pwd, char *root_has
 
 	if (S_ISDIR(inode->i_mode)) {
 		pr_err("container-ima: measuring dir %s", abspath);
-	    list_for_each_entry(cur, &root->d_child, d_child) {
+	    list_for_each_entry(cur, &root->d_subdirs, d_child) {
 			pr_err("container-ima: %s child %s", abspath, cur->d_name.name);
 			ima_measure_image_fs(cur, abspath, root_hash, pfilecounter);
 		}
+		/*
 	    list_for_each_entry(cur, &root->d_subdirs, d_subdirs) {
 			pr_err("container-ima: %s subdir %s", abspath, cur->d_name.name);
 			ima_measure_image_fs(cur, abspath, root_hash, pfilecounter);
 		}
+		*/
 	} else if (S_ISREG(inode->i_mode)) {
 		pr_err("container-ima: measuring %s", abspath);
 		file = filp_open(abspath, O_RDONLY, 0);
