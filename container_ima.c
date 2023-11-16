@@ -178,7 +178,7 @@ noinline int ima_measure_image_fs(struct dentry *root, char *pwd, char *root_has
 	struct inode *inode;
 	struct dentry *cur;
 	char *pathbuf = NULL;
-        char *res = NULL;
+    char *res = NULL;
 	char *abspath;
 
 	/* Docker: get abs path (pwd+dentry path) */
@@ -203,6 +203,7 @@ noinline int ima_measure_image_fs(struct dentry *root, char *pwd, char *root_has
 		return -1;
 	}
 
+	/*
     inode = d_real_inode(root);
 	if (!inode) {
 		pr_err("container-ima: %s: failed to find inode", pwd);
@@ -210,7 +211,8 @@ noinline int ima_measure_image_fs(struct dentry *root, char *pwd, char *root_has
 		kfree(abspath);
 		return -1;
 	}
-	    
+	*/
+
     res = dentry_path_raw(root, pathbuf, PATH_MAX);
 	if (IS_ERR(res) || !res) {
 		kfree(pathbuf);
@@ -233,21 +235,13 @@ noinline int ima_measure_image_fs(struct dentry *root, char *pwd, char *root_has
 		return -1;
 	}
 
-	if (S_ISDIR(inode->i_mode)) {
+	if (d_is_dir(root)) {
 		pr_err("container-ima: measuring dir %s", abspath);
-		spin_lock(&root->d_lock);
 	    list_for_each_entry(cur, &root->d_subdirs, d_child) {
-			pr_err("container-ima: %s child %s", abspath, cur->d_name.name);
+	//		pr_err("container-ima: %s child %s", abspath, cur->d_name.name);
 			ima_measure_image_fs(cur, abspath, root_hash, pfilecounter);
 		}
-		spin_unlock(&root->d_lock);
-		/*
-	    list_for_each_entry(cur, &root->d_subdirs, d_subdirs) {
-			pr_err("container-ima: %s subdir %s", abspath, cur->d_name.name);
-			ima_measure_image_fs(cur, abspath, root_hash, pfilecounter);
-		}
-		*/
-	} else if (S_ISREG(inode->i_mode)) {
+	} else if (d_is_reg(root)) {
 		pr_err("container-ima: measuring %s", abspath);
 		file = filp_open(abspath, O_RDONLY, 0);
 		if (!(IS_ERR(file))) {
