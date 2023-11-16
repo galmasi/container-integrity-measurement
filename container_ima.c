@@ -214,8 +214,9 @@ noinline int ima_measure_image_fs(struct dentry *root, char *pwd, char *root_has
 		return -1;
 	}
 	if (S_ISDIR(inode->i_mode)) {
+		  pr_err("container-ima: measuring dir %s", abspath);
 	       	list_for_each_entry(cur, &root->d_subdirs, d_child) {
-		  ima_measure_image_fs(cur, pwd, root_hash, pfilecounter);
+		  ima_measure_image_fs(cur, abspath, root_hash, pfilecounter);
 		 }
 	} else if (S_ISREG(inode->i_mode)) {
 	  pr_err("container-ima: measuring %s", abspath);
