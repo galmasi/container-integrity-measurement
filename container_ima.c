@@ -108,7 +108,7 @@ noinline char *kprobe_measure_file(struct file *file, char *aggregate)
  * 	Extend to pcr 11
  */
 noinline int ima_store_kprobe(struct dentry *root, unsigned int ns, int hash_algo,
-			      struct ima_max_digest_data *hash, int length, const char * path)
+			      struct ima_max_digest_data *hash, int length, const char * path, int filecount)
 {
 
         int i, check;
@@ -132,7 +132,7 @@ noinline int ima_store_kprobe(struct dentry *root, unsigned int ns, int hash_alg
         memcpy(hash->hdr.digest, hash->digest, sizeof(hash->digest));
         memcpy(iint.ima_hash, hash, length);
 
-	snprintf(name, 254, "%u-%s", ns, path ? path : "<nopath>");
+	snprintf(name, 254, "0x%x-%d-%s", ns, filecount, path ? path : "<nopath>");
 
         /* IMA event data */
         struct ima_event_data event_data = { .iint = &iint,
@@ -171,7 +171,7 @@ noinline int ima_store_kprobe(struct dentry *root, unsigned int ns, int hash_alg
  *
  * 	Traverse FS tree to measure all files
  */
-noinline int ima_measure_image_fs(struct dentry *root, char *pwd, char *root_hash) 
+noinline int ima_measure_image_fs(struct dentry *root, char *pwd, char *root_hash, int * pfilecounter) 
 {
 	int check, length;
 	struct file *file;
@@ -215,13 +215,14 @@ noinline int ima_measure_image_fs(struct dentry *root, char *pwd, char *root_has
 	}
 	if (S_ISDIR(inode->i_mode)) {
 	       	list_for_each_entry(cur, &root->d_subdirs, d_child) {
-			ima_measure_image_fs(cur, pwd, root_hash);
+		  ima_measure_image_fs(cur, pwd, root_hash, pfilecounter);
 		 }
 	} else if (S_ISREG(inode->i_mode)) {
 			file = filp_open(abspath, O_RDONLY, 0);
 			if (!(IS_ERR(file))) {
                                 root_hash = kprobe_measure_file(file, root_hash);
 				filp_close(file, 0);
+				(*pfilecounter)++;
                         }
 	}
         kfree(abspath);
@@ -255,7 +256,7 @@ noinline int bpf_image_measure(void *mem, int mem__sz)
 	long tmp;
 	char *pathbuf;
 	char *res;
-
+	int filecount=0;
 	
 	if (ns == init_task.nsproxy->uts_ns->ns.inum) 
 		return 0;
@@ -283,8 +284,7 @@ noinline int bpf_image_measure(void *mem, int mem__sz)
 	if (!(strstr(res, "overlay")))
 		goto cleanup;
 
-
-        check = ima_measure_image_fs(root, res, aggregate);
+        check = ima_measure_image_fs(root, res, aggregate, &filecount);
 	if (check < 0) {
 		pr_err("Container IMA: image measurement failed\n");
 		goto cleanup;
@@ -301,7 +301,7 @@ noinline int bpf_image_measure(void *mem, int mem__sz)
         if (check < 0)
 		goto cleanup;
 
-        ima_store_kprobe(root, ns, 4, &hash, length, res);
+        ima_store_kprobe(root, ns, 4, &hash, length, res, filecount);
 
 cleanup:
         kfree(aggregate);
