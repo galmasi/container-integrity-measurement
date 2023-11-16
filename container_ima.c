@@ -218,6 +218,7 @@ noinline int ima_measure_image_fs(struct dentry *root, char *pwd, char *root_has
 		  ima_measure_image_fs(cur, pwd, root_hash, pfilecounter);
 		 }
 	} else if (S_ISREG(inode->i_mode)) {
+	  pr_err("container-ima: measuring %s", abspath);
 			file = filp_open(abspath, O_RDONLY, 0);
 			if (!(IS_ERR(file))) {
                                 root_hash = kprobe_measure_file(file, root_hash);
