@@ -192,29 +192,29 @@ noinline int ima_measure_image_fs(struct dentry *root, char *pwd, char *root_has
 	pathbuf = kmalloc(PATH_MAX, GFP_KERNEL);
     if (!pathbuf) {
 		pr_err("container-ima: %s: pathbuf allocation failed", pwd);
-		free(abspath);
+		kfree(abspath);
     	return -1;
 	}
 
 	if (!root) {
 		pr_err("container-ima: %s: NULL dentry in directory", pwd);
-		free(pathbuf);
-		free(abspath);
+		kfree(pathbuf);
+		kfree(abspath);
 		return -1;
 	}
 
     inode = d_real_inode(root);
 	if (!inode) {
 		pr_err("container-ima: %s: failed to find inode", pwd);
-		free(pathbuf);
-		free(abspath);
+		kfree(pathbuf);
+		kfree(abspath);
 		return -1;
 	}
 	    
     res = dentry_path_raw(root, pathbuf, PATH_MAX);
 	if (IS_ERR(res) || !res) {
-		free(pathbuf);
-		free(abspath);
+		kfree(pathbuf);
+		kfree(abspath);
 		pr_err("container-ima: dentry_path_raw failed to retrieve path");
 		return -1;
 	}
@@ -228,8 +228,8 @@ noinline int ima_measure_image_fs(struct dentry *root, char *pwd, char *root_has
 	check = snprintf(abspath, length, "%s%s", pwd, res);
 	if (check < 1) {
 		pr_err("container-ima: sprintf failed");
-		free(pathbuf);
-		free(abspath);
+		kfree(pathbuf);
+		kfree(abspath);
 		return -1;
 	}
 
