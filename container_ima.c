@@ -117,7 +117,7 @@ noinline int ima_store_kprobe(struct dentry *root, unsigned int ns, int hash_alg
         struct ima_template_entry *entry;
         struct integrity_iint_cache iint = {};
         struct ima_template_desc *desc = NULL;
-        char name[64];
+        char name[256];
         char *extend;
 
         inode = root->d_inode;
@@ -132,7 +132,7 @@ noinline int ima_store_kprobe(struct dentry *root, unsigned int ns, int hash_alg
         memcpy(hash->hdr.digest, hash->digest, sizeof(hash->digest));
         memcpy(iint.ima_hash, hash, length);
 
-	snprintf(name, 63, "%u-%s", ns, path ? path : "<nopath>");
+	snprintf(name, 254, "%u-%s", ns, path ? path : "<nopath>");
 
         /* IMA event data */
         struct ima_event_data event_data = { .iint = &iint,
