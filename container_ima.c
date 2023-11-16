@@ -181,54 +181,75 @@ noinline int ima_measure_image_fs(struct dentry *root, char *pwd, char *root_has
         char *res = NULL;
 	char *abspath;
 
-	if (!root) 
-		return -1;
+	/* Docker: get abs path (pwd+dentry path) */
+	abspath = kmalloc(PATH_MAX*2, GFP_KERNEL);
+    if (!abspath) {
+		pr_err("container-ima: %s: abspath allocation failed", pwd);
+        return -1;
+	}
 
-        inode = d_real_inode(root);
-	if (!inode)
-		return -1;
-	
-        pathbuf = kmalloc(PATH_MAX, GFP_KERNEL);
-        if (!pathbuf) 
-              return -1;
+	/* buffer for local (dentry) path */
+	pathbuf = kmalloc(PATH_MAX, GFP_KERNEL);
+    if (!pathbuf) {
+		pr_err("container-ima: %s: pathbuf allocation failed", pwd);
+		free(abspath);
+    	return -1;
+	}
 
-       	res = dentry_path_raw(root, pathbuf, PATH_MAX);
+	if (!root) {
+		pr_err("container-ima: %s: NULL dentry in directory", pwd);
+		free(pathbuf);
+		free(abspath);
+		return -1;
+	}
+
+    inode = d_real_inode(root);
+	if (!inode) {
+		pr_err("container-ima: %s: failed to find inode", pwd);
+		free(pathbuf);
+		free(abspath);
+		return -1;
+	}
+	    
+    res = dentry_path_raw(root, pathbuf, PATH_MAX);
 	if (IS_ERR(res) || !res) {
+		free(pathbuf);
+		free(abspath);
 		pr_err("container-ima: dentry_path_raw failed to retrieve path");
 		return -1;
 	}
-	kfree(pathbuf);
 	
-	/* Docker: get abs path (pwd+dentry path) */
-	abspath = kmalloc(PATH_MAX*2, GFP_KERNEL);
-        if (!abspath)
-              return -1;
-
+	/* remove trailing slash from pwd */
 	if (pwd[strlen(pwd)-1] == '/')
 		pwd[strlen(pwd)-1] = '\0';
-	
+
+	/* merge pwd and res into abspath */
 	length = (strlen(pwd)+strlen(res))+2;
 	check = snprintf(abspath, length, "%s%s", pwd, res);
 	if (check < 1) {
 		pr_err("container-ima: sprintf failed");
+		free(pathbuf);
+		free(abspath);
 		return -1;
 	}
+
 	if (S_ISDIR(inode->i_mode)) {
-		  pr_err("container-ima: measuring dir %s", abspath);
-	       	list_for_each_entry(cur, &root->d_subdirs, d_child) {
-		  ima_measure_image_fs(cur, abspath, root_hash, pfilecounter);
-		 }
+		pr_err("container-ima: measuring dir %s", abspath);
+	    list_for_each_entry(cur, &root->d_subdirs, d_child) {
+			ima_measure_image_fs(cur, abspath, root_hash, pfilecounter);
+		}
 	} else if (S_ISREG(inode->i_mode)) {
-	  pr_err("container-ima: measuring %s", abspath);
-			file = filp_open(abspath, O_RDONLY, 0);
-			if (!(IS_ERR(file))) {
-                                root_hash = kprobe_measure_file(file, root_hash);
-				filp_close(file, 0);
-				(*pfilecounter)++;
-                        }
+		pr_err("container-ima: measuring %s", abspath);
+		file = filp_open(abspath, O_RDONLY, 0);
+		if (!(IS_ERR(file))) {
+            root_hash = kprobe_measure_file(file, root_hash);
+			filp_close(file, 0);
+			(*pfilecounter)++;
+        }
 	}
-        kfree(abspath);
-	
+
+	kfree(pathbuf);
+    kfree(abspath);
 	return 0;
 
 
