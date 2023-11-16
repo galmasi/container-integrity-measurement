@@ -240,7 +240,7 @@ noinline int ima_measure_image_fs(struct dentry *root, char *pwd, char *root_has
 			ima_measure_image_fs(cur, abspath, root_hash, pfilecounter);
 		}
 	    list_for_each_entry(cur, &root->d_subdirs, d_subdirs) {
-			pr_err("container-ima: %s subdir %s", abspatßh, cur->d_name.name);
+			pr_err("container-ima: %s subdir %s", abspath, cur->d_name.name);
 			ima_measure_image_fs(cur, abspath, root_hash, pfilecounter);
 		}
 	} else if (S_ISREG(inode->i_mode)) {
