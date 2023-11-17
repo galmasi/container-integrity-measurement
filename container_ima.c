@@ -179,27 +179,31 @@ noinline int ima_measure_image_fs(struct dentry *root, char *pwd, char *root_has
 	struct dentry *cur;
 	char *pathbuf = NULL;
     char *res = NULL;
-	char *abspath;
+	char *abspath = NULL;
 
 	/* Docker: get abs path (pwd+dentry path) */
+	/*
 	abspath = kmalloc(PATH_MAX*2, GFP_KERNEL);
     if (!abspath) {
 		pr_err("container-ima: %s: abspath allocation failed", pwd);
         return -1;
 	}
+	*/
 
 	/* buffer for local (dentry) path */
+	/*
 	pathbuf = kmalloc(PATH_MAX, GFP_KERNEL);
     if (!pathbuf) {
 		pr_err("container-ima: %s: pathbuf allocation failed", pwd);
 		kfree(abspath);
     	return -1;
 	}
+    */
 
 	if (!root) {
 		pr_err("container-ima: %s: NULL dentry in directory", pwd);
-		kfree(pathbuf);
-		kfree(abspath);
+		/*kfree(pathbuf);
+		kfree(abspath);*/
 		return -1;
 	}
 
@@ -213,6 +217,7 @@ noinline int ima_measure_image_fs(struct dentry *root, char *pwd, char *root_has
 	}
 	*/
 
+	/*
     res = dentry_path_raw(root, pathbuf, PATH_MAX);
 	if (IS_ERR(res) || !res) {
 		kfree(pathbuf);
@@ -220,12 +225,16 @@ noinline int ima_measure_image_fs(struct dentry *root, char *pwd, char *root_has
 		pr_err("container-ima: dentry_path_raw failed to retrieve path");
 		return -1;
 	}
-	
+	*/
+
 	/* remove trailing slash from pwd */
+	/*
 	if (pwd[strlen(pwd)-1] == '/')
 		pwd[strlen(pwd)-1] = '\0';
+		*/
 
 	/* merge pwd and res into abspath */
+	/*
 	length = (strlen(pwd)+strlen(res))+2;
 	check = snprintf(abspath, length, "%s%s", pwd, res);
 	if (check < 1) {
@@ -233,26 +242,26 @@ noinline int ima_measure_image_fs(struct dentry *root, char *pwd, char *root_has
 		kfree(pathbuf);
 		kfree(abspath);
 		return -1;
-	}
+	}*/
 
 	if (d_is_dir(root)) {
-		pr_err("container-ima: measuring dir %s", abspath);
+		pr_err("container-ima: measuring dir %s", root->d_name.name);
 	    list_for_each_entry(cur, &root->d_subdirs, d_child) {
-	//		pr_err("container-ima: %s child %s", abspath, cur->d_name.name);
 			ima_measure_image_fs(cur, abspath, root_hash, pfilecounter);
 		}
 	} else if (d_is_reg(root)) {
-		pr_err("container-ima: measuring %s", abspath);
-		file = filp_open(abspath, O_RDONLY, 0);
+		pr_err("container-ima: measuring file %s", root->d_name.name);
+		(*pfilecounter)++;
+/*		file = filp_open(abspath, O_RDONLY, 0);
 		if (!(IS_ERR(file))) {
             root_hash = kprobe_measure_file(file, root_hash);
 			filp_close(file, 0);
-			(*pfilecounter)++;
         }
+		*/
 	}
 
-	kfree(pathbuf);
-    kfree(abspath);
+	/*kfree(pathbuf);
+    kfree(abspath);*/
 	return 0;
 
 
